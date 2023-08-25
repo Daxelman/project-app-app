@@ -4,7 +4,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Visit The Page!
 
-Go to [https://daxelman.github.io/project-app-app/](https://daxelman.github.io/project-app-app/) to see the thing!
+Go to [https://daxelman.github.io/project-app-app/](https://daxelman.github.io) to see the thing!
 
 ## Available Scripts
 

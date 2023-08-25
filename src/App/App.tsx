@@ -1,14 +1,12 @@
-import { Routes, Route, Link } from "react-router-dom";
-import Layout from "../Layout/Layout";
-import About from "../../Components/About/About";
-import Home from "../Home/Home";
-import Inventory from "../../Components/Inventory/Inventory";
+import { Routes, Route, Link, Outlet } from "react-router-dom";
+import Layout from "../Containers/Layout/Layout";
+import About from "../Containers/About/About";
+import Home from "../Containers/Home/Home";
+import Inventory from "../Containers/Inventory/Inventory";
 
 const App = () => {
   return (
     <div>
-      <h1>Welcome Pluto!</h1>
-
       {/* Routes nest inside one another. Nested route paths build upon
             parent route paths, and nested route elements render inside
             parent route elements. See the note about <Outlet> below. */}
