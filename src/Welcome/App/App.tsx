@@ -2,7 +2,6 @@ import { Routes, Route, Link } from "react-router-dom";
 import Layout from "../Layout/Layout";
 import About from "../../Components/About/About";
 import Home from "../Home/Home";
-import Inventory from "../../Components/Inventory/Inventory";
 
 const App = () => {
   return (
@@ -16,7 +15,6 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
-          <Route path="inventory" element={<Inventory />} />
 
           {/* Using path="*"" means "match anything", so this route
                 acts like a catch-all for URLs that we don't have explicit
