@@ -1,24 +1,24 @@
-# Source - https://stackoverflow.com/a/61706020
-# Posted by SUPERCILEX, modified by community. See post 'Timeline' for change history
-# Retrieved 2026-03-04, License - CC BY-SA 4.0
-
-# File: .github/workflows/refresh.yml
-name: Refresh
+name: Deploy
 
 on:
-  schedule:
-    - cron:  '0 3 * * *' # Runs every day at 3am
+  push:
+    branches:
+      - main
 
 jobs:
-  refresh:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger GitHub pages rebuild
-        run: |
-          curl --fail --request POST \
-            --url https://api.github.com/repos/${{ github.repository }}/pages/builds \
-            --header "Authorization: Bearer $USER_TOKEN"
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy
+        run: npm run deploy
         env:
-          # You must create a personal token with repo access as GitHub does
-          # not yet support server-to-server page builds.
-          USER_TOKEN: ${{ secrets.USER_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
