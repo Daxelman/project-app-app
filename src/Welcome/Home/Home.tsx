@@ -1,19 +1,11 @@
 import { useState } from "react";
 import "./Home.css";
+import { lookupCards } from "../../services/cardLookup";
+import type { ScryfallCard } from "../../types/scryfall";
 
 type CardEntry = {
   quantity: number;
   name: string;
-};
-
-type ScryfallCard = {
-  name: string;
-  mana_cost: string;
-  cmc: number;
-  type_line: string;
-  colors: string[];
-  color_identity: string[];
-  legalities: Record<string, string>;
 };
 
 type ValidationResult = {
@@ -34,36 +26,11 @@ function parseList(raw: string): CardEntry[] {
     .filter((entry): entry is CardEntry => entry !== null);
 }
 
-async function validateWithScryfall(cards: CardEntry[]): Promise<ValidationResult> {
-  const response = await fetch("https://api.scryfall.com/cards/collection", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      identifiers: cards.map((c) => ({ name: c.name })),
-    }),
-  });
-
-  const json = await response.json();
-
-  const found = (json.data as ScryfallCard[]).map((scryfallCard) => {
-    const entry = cards.find(
-      (c) => c.name.toLowerCase() === scryfallCard.name.toLowerCase()
-    ) ?? { quantity: 1, name: scryfallCard.name };
-    return { ...entry, data: scryfallCard };
-  });
-
-  const notFound = (json.not_found as { name: string }[]).map((nf) => {
-    const entry = cards.find((c) => c.name.toLowerCase() === nf.name.toLowerCase());
-    return entry ?? { quantity: 0, name: nf.name };
-  });
-
-  return { found, notFound };
-}
-
 const Home = () => {
   const [inputList, setInputList] = useState("");
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -76,12 +43,26 @@ const Home = () => {
     }
     setLoading(true);
     try {
-      const validation = await validateWithScryfall(parsed);
-      setResult(validation);
+      const { found, notFound } = await lookupCards(
+        parsed.map((c) => c.name),
+        setLoadingStatus,
+      );
+      setResult({
+        found: found.map(({ name, data }) => ({
+          ...(parsed.find(
+            (c) => c.name.toLowerCase() === name.toLowerCase(),
+          ) ?? { quantity: 1, name }),
+          data,
+        })),
+        notFound: notFound.map((name) => ({ quantity: 0, name })),
+      });
     } catch {
-      setError("Failed to reach Scryfall. Check your connection and try again.");
+      setError(
+        "Failed to load card data. Check your connection and try again.",
+      );
     } finally {
       setLoading(false);
+      setLoadingStatus("");
     }
   };
 
@@ -90,8 +71,8 @@ const Home = () => {
       <div>
         <h1>Optimize Your Mana</h1>
         <p>
-          Paste a list of your cards below, and I'll return what an optimized
-          mana base looks like.
+          Paste you deck below, hit the button, and we'll try and give you an
+          optimized mana base.
         </p>
       </div>
       <div>
@@ -102,7 +83,7 @@ const Home = () => {
           rows={12}
         />
         <button type="button" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Checking cards..." : "Give Me Good Mana"}
+          {loading ? loadingStatus || "Checking cards..." : "Give Me Good Mana"}
         </button>
       </div>
 
@@ -114,7 +95,8 @@ const Home = () => {
           <ul>
             {result.found.map((card) => (
               <li key={card.name}>
-                {card.quantity}x {card.name} — {card.data.type_line} {card.data.mana_cost}
+                {card.quantity}x {card.name} — {card.data.type_line}{" "}
+                {card.data.mana_cost}
               </li>
             ))}
           </ul>

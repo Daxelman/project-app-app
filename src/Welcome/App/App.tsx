@@ -6,7 +6,7 @@ import Home from "../Home/Home";
 const App = () => {
   return (
     <div>
-      <h1>Welcome Pluto!</h1>
+      <h1>Mana Optimizer!</h1>
 
       {/* Routes nest inside one another. Nested route paths build upon
             parent route paths, and nested route elements render inside
