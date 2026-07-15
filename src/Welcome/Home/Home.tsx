@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./Home.css";
 import { lookupCards } from "../../services/cardLookup";
 import type { ScryfallCard } from "../../types/scryfall";
+import { ManaBreakdown, optimizeMana } from "../../services/optimizer";
 
 type CardEntry = {
   quantity: number;
@@ -32,6 +33,9 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [manaBreakdown, setManaBreakdown] = useState<ManaBreakdown | null>(
+    null,
+  );
 
   const handleSubmit = async () => {
     setError(null);
@@ -47,15 +51,17 @@ const Home = () => {
         parsed.map((c) => c.name),
         setLoadingStatus,
       );
+      const foundCards = found.map(({ name, data }) => ({
+        ...(parsed.find(
+          (c) => c.name.toLowerCase() === name.toLocaleLowerCase(),
+        ) ?? { quantity: 1, name }),
+        data,
+      }));
       setResult({
-        found: found.map(({ name, data }) => ({
-          ...(parsed.find(
-            (c) => c.name.toLowerCase() === name.toLowerCase(),
-          ) ?? { quantity: 1, name }),
-          data,
-        })),
+        found: foundCards,
         notFound: notFound.map((name) => ({ quantity: 0, name })),
       });
+      setManaBreakdown(optimizeMana(foundCards));
     } catch {
       setError(
         "Failed to load card data. Check your connection and try again.",
@@ -89,21 +95,25 @@ const Home = () => {
 
       {error && <p className="error">{error}</p>}
 
-      {result && (
+      {result && manaBreakdown && (
         <div>
-          <h2>Validated Cards ({result.found.length})</h2>
-          <ul>
-            {result.found.map((card) => (
-              <li key={card.name}>
-                {card.quantity}x {card.name} — {card.data.type_line}{" "}
-                {card.data.mana_cost}
-              </li>
-            ))}
-          </ul>
+          <h2>Mana Breakdown:</h2>
+          <h3>
+            Deck Color Identity: <b>{manaBreakdown.colorIdentity}</b>
+          </h3>
+          <h3>
+            Current Land Count: <b>{manaBreakdown.landCount}</b>
+          </h3>
+          <h3>
+            Current Non Land Count: <b>{manaBreakdown.nonLandCount}</b>
+          </h3>
+
+          <h2>So I think You Need (at least) these Basics:</h2>
+          <h5>(when I figure this out I'll let you know)</h5>
 
           {result.notFound.length > 0 && (
             <>
-              <h2>Not Recognized ({result.notFound.length})</h2>
+              <h2>Card(s) Not Recognized ({result.notFound.length})</h2>
               <ul className="not-found-list">
                 {result.notFound.map((card) => (
                   <li key={card.name}>{card.name}</li>
