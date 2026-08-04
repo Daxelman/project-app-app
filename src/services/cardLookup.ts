@@ -1,4 +1,5 @@
 import localforage from "localforage";
+import { ungzip } from "pako";
 import type { ScryfallCard } from "../types/scryfall";
 
 // Claude says I can migrate to backend API by replacing the body of `lookupCards`
@@ -27,15 +28,28 @@ async function populate(onProgress: (status: string) => void): Promise<void> {
   const metaRes = await fetch(
     "https://api.scryfall.com/bulk-data/oracle-cards",
   );
-  const { download_uri } = await metaRes.json();
+  const { jsonl_download_uri } = await metaRes.json();
+  if (!jsonl_download_uri) {
+    throw new Error(
+      "Scryfall bulk-data metadata didn't include a jsonl_download_uri — their API may have changed again.",
+    );
+  }
 
+  // The bulk file is gzip-compressed JSON Lines (one card object per line),
+  // not a single JSON array, and Scryfall doesn't set Content-Encoding, so
+  // fetch() won't auto-decompress it — we have to gunzip it ourselves.
   onProgress("Downloading card database (one-time setup, ~70MB)...");
-  const dataRes = await fetch(download_uri);
-  const rawCards: ScryfallCard[] = await dataRes.json();
+  const dataRes = await fetch(jsonl_download_uri);
+  const compressed = new Uint8Array(await dataRes.arrayBuffer());
+
+  onProgress("Decompressing card database...");
+  const jsonl = ungzip(compressed, { toText: true });
 
   onProgress("Indexing cards...");
   const cardMap: CardMap = {};
-  for (const card of rawCards) {
+  for (const line of jsonl.split("\n")) {
+    if (!line) continue;
+    const card: ScryfallCard = JSON.parse(line);
     cardMap[card.name.toLowerCase()] = {
       name: card.name,
       mana_cost: card.mana_cost,
