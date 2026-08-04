@@ -7,6 +7,7 @@ export type ManaBreakdown = {
   landCount: number;
   nonLandCount: number;
   basicsNeeded: Partial<Record<ManaColor, number>>;
+  convertedManaCost: number;
 };
 
 export type DeckCard = {
@@ -31,11 +32,27 @@ export function optimizeMana(deck: DeckCard[]): ManaBreakdown {
   //TODO: factor in color pips
   const landCount = countCards(deck, isLand);
   const nonLandCount = countCards(deck, (card) => !isLand(card));
+  const convertedManaCost = getAverageConvertedManaCost(deck, nonLandCount);
 
   //TODO: calculate basicsNeeded once the mana-base formula is worked out
   const basicsNeeded: ManaBreakdown["basicsNeeded"] = {};
 
-  return { colorIdentity, landCount, nonLandCount, basicsNeeded };
+  return {
+    colorIdentity,
+    landCount,
+    nonLandCount,
+    basicsNeeded,
+    convertedManaCost,
+  };
+}
+
+function getAverageConvertedManaCost(
+  deck: DeckCard[],
+  nonLandCount: number,
+): number {
+  const cmc = deck.reduce((acc, val) => acc + val.data.cmc, 0);
+
+  return cmc / nonLandCount;
 }
 
 function getDeckColorIdentity(deck: DeckCard[]): ManaColor[] {

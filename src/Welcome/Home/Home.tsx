@@ -62,7 +62,8 @@ const Home = () => {
         notFound: notFound.map((name) => ({ quantity: 0, name })),
       });
       setManaBreakdown(optimizeMana(foundCards));
-    } catch {
+    } catch (error) {
+      console.log(error);
       setError(
         "Failed to load card data. Check your connection and try again.",
       );
@@ -106,6 +107,10 @@ const Home = () => {
           </h3>
           <h3>
             Current Non Land Count: <b>{manaBreakdown.nonLandCount}</b>
+          </h3>
+          <h3>
+            Average Mana Value:{" "}
+            <b>{manaBreakdown.convertedManaCost.toFixed(2)}</b>
           </h3>
 
           <h2>So I think You Need (at least) these Basics:</h2>
